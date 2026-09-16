@@ -632,6 +632,27 @@ class DependencyInjectionJvmTest {
     }
 
     @Test
+    fun `concurrent startup resolves chained module dependencies`() = runTestWithRealTime {
+        testApplication {
+            environment {
+                config = MapApplicationConfig().apply {
+                    put("ktor.application.startup", "concurrent")
+                }
+            }
+            application {
+                dependencies.resolve<BankService>()
+            }
+            application {
+                dependencies.resolve<GreetingService>()
+                dependencies.provide<BankService> { BankServiceImpl() }
+            }
+            application {
+                dependencies.provide<GreetingService> { GreetingServiceImpl() }
+            }
+        }
+    }
+
+    @Test
     fun `covariant key sees stale Missing placeholder before map replacement is visible`() = runTestWithRealTime {
         val map: DependencyInitializerMap = mutableMapOf()
         val provider = MapDependencyProvider(
